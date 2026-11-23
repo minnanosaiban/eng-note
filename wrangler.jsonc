@@ -5,7 +5,7 @@
   "assets": { "directory": "./public", "run_worker_first": ["/api/*"] },
   "d1_databases": [
     // database_id は、`npx wrangler d1 create eng-note-db` で作ったあとに、表示された ID に書き換える
-    { "binding": "DB", "database_name": "eng-note-db", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "eng-note-db", "database_id": "1e63b0fc-10d4-4ef9-8194-7d60bc8f7e71", "migrations_dir": "migrations" }
   ],
   // 作成できる保管庫の数。持ち主が作成した後は他人が作れないよう 1 にしている
   "vars": { "MAX_VAULTS": "1" }
