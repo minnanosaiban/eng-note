@@ -64,7 +64,7 @@
   function parseFile(name, text) {
     if (/\.json$/i.test(name)) {
       const j = JSON.parse(text);
-      if (Array.isArray(j.sentences)) return { sentences: j.sentences, notes: Array.isArray(j.notes) ? j.notes : [] };
+      if (Array.isArray(j.sentences) || Array.isArray(j.notes)) return { sentences: Array.isArray(j.sentences) ? j.sentences : [], notes: Array.isArray(j.notes) ? j.notes : [] };
       if (Array.isArray(j.items)) { const gn = new Map((j.groups || []).map(g => [g.id, g.name])); return { sentences: j.items.map(x => ({ ...x, groups: [...(x.groups || []), ...(x.gids || []).map(i => gn.get(i)).filter(Boolean)] })), notes: [] } }
       throw new Error("英文が見つかりません");
     }
