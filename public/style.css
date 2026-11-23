@@ -382,3 +382,4 @@ dialog.notedlg input[type=text]{width:100%;margin-bottom:8px}
 .aiset input{width:100%}
 .err{color:var(--danger);font-size:13px}
 #selPlay{position:fixed;z-index:30}
+.note-i.hit{outline:2px solid var(--pri)}

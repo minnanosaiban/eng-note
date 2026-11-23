@@ -132,6 +132,10 @@
   const jaShow = new Set(); // 「訳」ボタンで和訳を出している英文(初期は、どれも和訳を隠す)
   const jaTail = ja => { const t = (ja || "").replace(/[。.\s]+$/, ""), i = Math.max(...[..."にをでへとがは"].map(c => t.lastIndexOf(c))); return i > 0 ? "～" + t.slice(i) : t };
   const safe = (f, d) => { try { return f() } catch { return d } };
+  // 英文の行 →「解説」タブの、同じ英文をタイトルにした解説(あれば開く。無ければ、その英文で新しく書く)
+  const noteKey = t => String(t || "").replace(/\s+/g, " ").trim().slice(0, 120).trim().toLowerCase();
+  let noteMap = new Map();
+  const noteBtn = r => { const has = noteMap.has(noteKey(r.text)); return `<button type="button" class="jt" data-note="${r.id}" aria-pressed="${has}" title="${has ? "この英文の解説を開く" : "この英文の解説を書く(まだありません)"}" aria-label="${has ? "この英文の解説を開く" : "この英文の解説を書く"}">解</button>` };
   function pickRow(r) {
     const part = Clean.partOf(r);
     const gAll = safe(() => Clean.gramTags(r), []), jt = ((gAll.find(x => x.k === "自他") || {}).t || "").slice(0, 1); // 自動詞・他動詞 → 自・他
@@ -143,7 +147,7 @@
     const tags = `${gt.filter(gHead).map(gtag).join("")}${tt ? `${tnsChip}${r.ja ? `<span class="gja">${esc(jaTail(r.ja))}</span>` : ""}${tt.sub.map(s => `<span class="gja">${esc(s.conj || "")}</span><span class="tag tns">${s.voice}・${s.tns}・${s.asp}</span>${s.ja ? `<span class="gja">${esc(s.ja)}</span>` : ""}`).join("")}` : ""}${gt.filter(x => !gHead(x)).map(gtag).join("")}${prefs.pick.groups ? `${part ? `<span class="tag">${part}</span>` : ""}${r.level ? `<span class="tag">${r.level}</span>` : ""}${r.label ? `<span class="tag">ラベル ${r.label}</span>` : ""}` : ""}${needsAI(r) ? '<span class="tag noexpl" title="解説(文構造・文法・TOEIC・単語など)がまだ足りません">解説なし</span>' : ""}${prefs.pick.groups ? (r.groups || []).map(g => `<span class="tag">${esc(g)}</span>`).join("") : ""}`;
     const body = `${prefs.slashMain && r.slash && r.slash.length ? r.slash.map(x => esc(x.en)).join(' <span class="slsep">/</span> ') : esc(r.text)}${elsOn ? `<div class="elsrow">${elsInner(r.elements, vOn ? tnsChip : "")}</div>` : ""}<div class="m jx"${jaShow.has(r.id) ? "" : " hidden"}>${jaText(r)}${jaEdit(r)}</div>`;
     const spd = v => `<button type="button" class="sm from spd" data-from="${r.id}" data-rate="${v}" title="${v} の速さで、ここから順に聞く(聞いている間は、もう一度押すと止める)" aria-label="${v} の速さで、ここから順に聞く。聞いている間は止める">${v}</button>`;
-    return `<label class="row-i"><span class="chk"><input type="checkbox" data-id="${r.id}" hidden>${spd("1.0")}${spd("0.8")}${spd("0.5")}</span><span class="t">${body}<span class="m"><br>${tags}</span></span><span class="side">${r.elements && r.elements.length ? `<button type="button" class="jt els" data-els="${r.id}" aria-pressed="${elsShow.has(r.id)}" title="S V O C M の区切りを、表示・非表示" aria-label="S V O C M の区切りを、表示・非表示">文</button>` : ""}<button type="button" class="jt" data-ja="${r.id}" title="和訳の表示・非表示" aria-label="和訳の表示・非表示">訳</button></span></label>`;
+    return `<label class="row-i"><span class="chk"><input type="checkbox" data-id="${r.id}" hidden>${spd("1.0")}${spd("0.8")}${spd("0.5")}</span><span class="t">${body}<span class="m"><br>${tags}</span></span><span class="side">${r.elements && r.elements.length ? `<button type="button" class="jt els" data-els="${r.id}" aria-pressed="${elsShow.has(r.id)}" title="S V O C M の区切りを、表示・非表示" aria-label="S V O C M の区切りを、表示・非表示">文</button>` : ""}<button type="button" class="jt" data-ja="${r.id}" title="和訳の表示・非表示" aria-label="和訳の表示・非表示">訳</button>${noteBtn(r)}</span></label>`;
   }
   let selIds = new Set(); // 一覧に出ている英文すべて(.txt保存・ラベル付け・削除の対象)
   function renderPick() {
@@ -151,6 +155,7 @@
     $("#btnShuffle").setAttribute("aria-pressed", String(!!shuf)); $("#btnUnshuffle").hidden = !shuf;
     document.querySelectorAll("#pickMenu button[data-p]").forEach(b => b.setAttribute("aria-pressed", String(pickOn(b.dataset.p))));
     renderGroupSelect(); $("#pGap").value = String(prefs.sh.gap); $("#pRep").value = String(prefs.sh.rep);
+    noteMap = new Map(notes.map(n => [noteKey(n.text), n]));
     const list = filtered();
     $("#pickList").innerHTML = list.length ? list.map(pickRow).join("")
       : `<p class="sub">${rows.length ? "条件に合うものがありません。" : "英文がありません。「＋ 英文」で足すか、「同期」の「データの読み込み」で入れてください。"}</p>`;
@@ -228,6 +233,18 @@
   // 行の「訳」を押すと、その行の和訳を出す・隠す
   $("#pickList").addEventListener("click", e => { const b = e.target.closest("button[data-ja]"); if (!b) return; e.preventDefault(); const id = b.dataset.ja, x = b.closest(".row-i").querySelector(".jx"); jaShow.has(id) ? jaShow.delete(id) : jaShow.add(id); if (x) x.hidden = !x.hidden });
   $("#pickList").addEventListener("click", e => { const b = e.target.closest("button[data-els]"); if (!b) return; e.preventDefault(); const id = b.dataset.els; elsShow.has(id) ? elsShow.delete(id) : elsShow.add(id); renderPick() });
+  $("#pickList").addEventListener("click", e => {
+    const b = e.target.closest("button[data-note]"); if (!b) return; e.preventDefault();
+    const r = rows.find(x => x.id === b.dataset.note); if (!r) return;
+    const n = noteMap.get(noteKey(r.text)); stopAudio();
+    if (n) { setTab("note"); $("#nq").value = ""; openNotes.add(n.id); renderNotes(); const el = document.querySelector(`.note-i[data-id="${n.id}"]`); if (el) { el.scrollIntoView({ block: "start" }); el.classList.add("hit") } return }
+    setTab("note"); openNote(null);
+    $("#nTitle").value = r.text.slice(0, 120); $("#nBody").value = `# ${r.text}
+
+**和訳**: ${r.ja || ""}
+
+`; $("#nGroup").value = ""; prev(); $("#nBody").focus();
+  });
   // 英文をなぞって選んだとき、行の操作が起きないようにする
   $("#pickList").addEventListener("click", e => { if (!e.target.closest("button") && window.getSelection().toString().trim()) e.preventDefault() }, true);
   // 行の 1.0 / 0.8 / 0.5 を押すと、その速さで、その行から順に聞く(聞いている間は、もう一度押すと止める)
@@ -364,11 +381,11 @@
     let n = editNote;
     if (n) Object.assign(n, { text: title.slice(0, 120), body, groups, updated: now });
     else { n = { id: Clean.uid(), text: title.slice(0, 120), body, groups, created: now, updated: now }; notes.push(n); sortAll() }
-    await Store.put(n, "notes"); openNotes.add(n.id); dlg.close(); renderNotes(); renderInfo();
+    await Store.put(n, "notes"); openNotes.add(n.id); dlg.close(); renderNotes(); renderInfo(); renderPick();
   };
   $("#nDel").onclick = async () => {
     if (!editNote || !confirm("この解説を削除しますか?")) return;
-    notes.splice(notes.indexOf(editNote), 1); await Store.del([editNote.id], "notes"); dlg.close(); renderNotes(); renderInfo();
+    notes.splice(notes.indexOf(editNote), 1); await Store.del([editNote.id], "notes"); dlg.close(); renderNotes(); renderInfo(); renderPick();
   };
   $("#btnMdFile").onclick = () => $("#fileMd").click();
   $("#fileMd").onchange = async e => {
