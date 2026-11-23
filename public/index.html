@@ -11,52 +11,78 @@
 <header class="top">
   <h1>英語ノート</h1>
   <nav id="tabs" role="tablist">
-    <button role="tab" data-tab="sent" aria-selected="true">英文</button>
+    <button role="tab" data-tab="pick" aria-selected="true">英文</button>
     <button role="tab" data-tab="note" aria-selected="false">解説</button>
     <button role="tab" data-tab="sync" aria-selected="false">同期</button>
   </nav>
-  <span class="topr"><button type="button" id="syncStatus" class="sub" hidden title="クリックで同期の画面を開く"></button></span>
+  <span class="topr">
+    <button type="button" id="syncStatus" class="sub" hidden title="クリックで同期の画面を開く"></button>
+  </span>
 </header>
 
 <main>
-  <!-- 英文 -->
-  <section id="tab-sent" class="tab">
+  <!-- 英文(eng-sentence の「英文」タブと同じ) -->
+  <section id="tab-pick" class="tab">
     <div class="card">
-      <div class="row wrap">
-        <input id="fq" type="search" placeholder="英文・和訳で検索" aria-label="検索">
+      <!-- 1列目〜3列目は同じ幅。4列目は残り -->
+      <div class="pickgrid">
+        <div class="shuf">
+          <button id="btnShuffle" class="sm" aria-pressed="false" title="表示中の英文を、ランダムな順に並べ替えます(聞く順も同じ。押すたびに並べ直します)">シャッフル</button>
+          <button id="btnUnshuffle" class="sm" hidden title="シャッフルをやめて、元の順に戻します">元の順</button>
+        </div>
         <select id="fgroup" aria-label="グループ"></select>
-        <select id="fstatus" aria-label="状態">
-          <option value="">状態: すべて</option><option value="new">未学習</option><option value="learning">学習中</option><option value="mastered">覚えた</option>
+        <select id="flabel" aria-label="ラベル"><option value="">ラベル</option><option value="1">ラベル 1</option><option value="2">ラベル 2</option><option value="3">ラベル 3</option><option value="4">ラベル 4</option><option value="5">ラベル 5</option><option value="none">ラベルなし</option></select>
+
+        <div class="pair">
+          <button id="btnPickTxt" class="ib" aria-label="選択を.txt保存" title="選んだ英文を、.txt(1行=1文)でダウンロードします"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg></button>
+        </div>
+        <label class="srch"><span>検索</span><input id="fq" type="search" placeholder="英文・和訳で検索"></label>
+      </div>
+      <div class="row wrap">
+        <button id="btnAddSent" class="sm" aria-expanded="false" aria-controls="addSent" title="英文と和訳を追加します">＋ 英文</button>
+        <select id="fexpl" aria-label="解説の有無" title="解説(文構造・文法・TOEIC・単語など)が無い英文だけを出せます">
+          <option value="">解説: すべて</option><option value="no">解説なし</option><option value="yes">解説あり</option>
         </select>
-        <button id="btnShuffle" class="sm" aria-pressed="false" title="ランダムな順に並べ替えます(押すたびに並べ直します)">シャッフル</button>
-        <button id="btnAddSent" class="sm" aria-expanded="false" aria-controls="addSent">＋ 英文</button>
+        <span id="explInfo" class="sub"></span>
       </div>
       <div id="addSent" class="addform" hidden>
-        <textarea id="addText" rows="3" placeholder="英文(1行に1文。複数行を貼ると、まとめて追加します)"></textarea>
-        <input id="addJa" type="text" placeholder="和訳(任意。1文だけのとき)" maxlength="500">
-        <input id="addGroup" type="text" placeholder="グループ名(任意。「、」で複数)" maxlength="80">
-        <div class="row"><button id="addOk" class="pri">追加</button><button id="addCancel">閉じる</button></div>
-        <p class="sub">ファイルから入れるとき: .csv(1列目=英文、2列目=和訳、3列目=グループ名)/ .txt(1行=1文)</p>
-        <input id="file" type="file" accept=".csv,.txt">
+        <textarea id="addSentText" rows="2" placeholder="英文(1文)" maxlength="500"></textarea>
+        <input id="addSentJa" type="text" placeholder="和訳(任意)" maxlength="500">
+        <input id="addSentGroup" type="text" placeholder="グループ名(任意)" maxlength="40">
+        <div class="row"><button id="addSentOk" class="pri">追加</button><button id="addSentCancel">閉じる</button></div>
+        <p class="sub">追加した英文は「解説なし」になります。</p>
       </div>
-      <div class="row wrap tools">
-        <label class="inl">間 <select id="pGap" title="読んだあとに置く、まねする時間(読み上げの長さの何倍か)"><option value="0">なし</option><option value="0.8">0.8倍</option><option value="1" selected>1倍</option><option value="1.5">1.5倍</option><option value="2">2倍</option></select></label>
-        <label class="inl">繰り返し <select id="pRep"></select></label>
-        <label class="inl">速さ <select id="pRate"><option value="0.6">0.6</option><option value="0.8">0.8</option><option value="1" selected>1.0</option><option value="1.2">1.2</option></select></label>
-        <button id="btnPlayAll" class="sm">▶ 表示中を順に聞く</button>
-        <button id="btnStop" class="sm" hidden>■ 止める</button>
-        <button id="btnJaToggle" class="sm" aria-pressed="true" title="和訳の表示を切り替えます">和訳</button>
-        <button id="btnTxt" class="sm" title="表示中の英文を、.txt(1行=1文)で保存します">.txt保存</button>
-        <button id="btnExport" class="sm" title="英文と解説を、.json に保存します">バックアップ</button>
-        <input id="fileJson" type="file" accept=".json" hidden>
-        <button id="btnImport" class="sm" title="バックアップ(.json)を読み込みます">読み込み</button>
-      </div>
-      <p id="info" class="sub"></p>
+      <p id="pickInfo" class="sub"></p>
     </div>
-    <div id="list" class="list"></div>
+    <!-- 固定メニュー(スクロールしても、上に残る) -->
+    <div class="card pickmenu" id="pickMenu">
+      <button id="btnSlashPick" class="sm" aria-pressed="false" title="英文を、意味の区切り( / )で切って出す">/</button>
+      <label class="inl">間 <select id="pGap" title="読んだあとに置く、まねする時間(読み上げの長さの何倍か)。「なし」なら、続けて読む"><option value="0">なし</option><option value="0.8">0.8倍</option><option value="1">1倍</option><option value="1.5">1.5倍</option><option value="2">2倍</option></select></label>
+      <label class="inl">繰り返し <select id="pRep" title="同じ英文を、何回続けて繰り返すか"><option value="1">1回</option><option value="2">2回</option><option value="3">3回</option><option value="4">4回</option><option value="5">5回</option><option value="6">6回</option><option value="7">7回</option><option value="8">8回</option><option value="9">9回</option><option value="10">10回</option></select></label>
+      <div class="lbl" id="labelBtns">
+        <span>ラベル付</span>
+        <button data-l="1">1</button><button data-l="2">2</button><button data-l="3">3</button><button data-l="4">4</button><button data-l="5">5</button><button data-l="0" title="ラベルを外します" aria-label="ラベルを外す">×</button>
+        <button id="btnDelSel" class="ib danger" aria-label="選んだものを削除" title="選んだものを削除"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg></button>
+        <button class="sm" data-p="groups" aria-pressed="true" title="グループ(パート・難易度・ラベル・自分で付けたグループ)を出す">グループ</button>
+      </div>
+      <span id="pickShow" role="group" aria-label="一覧の表示" class="pickshow">
+        <button class="sm" data-p="g:文型" data-g aria-pressed="true" title="文型(SV・SVO など)の枠を出す(S V O C M の区切りは、各英文の「文」ボタン)">文型</button>
+        <button class="sm" data-p="g:文の種類" data-g aria-pressed="true" title="文の種類(肯定・否定・疑問・命令)を出す">種類</button>
+        <button class="sm" data-p="tns" aria-pressed="true" title="態・時制・相(能 現 進 など)を出す">態・時制・相</button>
+        <button class="sm" data-p="g:助動詞" data-g aria-pressed="true" title="助動詞(can・must など)を出す">助動詞</button>
+        <button class="sm" data-p="g:準動詞" data-g aria-pressed="true" title="準動詞(不定詞・動名詞・分詞)を出す">準動詞</button>
+        <button class="sm" data-p="g:修飾" data-g aria-pressed="true" title="修飾(関係詞・形容詞・副詞・前置詞句)を出す">修飾</button>
+        <button class="sm" data-p="g:接続" data-g aria-pressed="true" title="接続(等位・従属)を出す">接続</button>
+        <button class="sm" data-p="g:条件・仮定" data-g aria-pressed="true" title="条件・仮定法を出す">条件・仮定</button>
+        <button class="sm" data-p="g:比較" data-g aria-pressed="true" title="比較(比較級・最上級・原級)を出す">比較</button>
+        <button class="sm" id="pickOff" data-g title="上のボタン(文型〜比較)の表示を、すべて外す">外す</button>
+      </span>
+      <span id="pickPst" class="sub"></span>
+    </div>
+    <div id="pickList" class="list"></div>
   </section>
 
-  <!-- 解説 -->
+  <!-- 解説(Markdown) -->
   <section id="tab-note" class="tab" hidden>
     <div class="card">
       <div class="row wrap">
@@ -69,8 +95,7 @@
     </div>
     <div id="noteList" class="list"></div>
 
-    <!-- 追加・編集 -->
-    <dialog id="noteDlg">
+    <dialog id="noteDlg" class="notedlg">
       <h2 id="noteDlgTitle">解説を追加</h2>
       <input id="nTitle" type="text" placeholder="タイトル" maxlength="120">
       <div class="mdedit">
@@ -93,12 +118,25 @@
       <h2>クラウド同期(暗号化)</h2>
       <div id="syncBox"></div>
     </div>
+    <div class="card">
+      <h2>データの読み込み・バックアップ</h2>
+      <p id="regInfo" class="sub"></p>
+      <p class="sub">読み込めるもの: .json(eng-sentence の「バックアップ保存」、このアプリのバックアップ、解析済みの英文)/ .csv(1列目=英文、2列目=グループ名。「、」で複数)/ .txt(1行=1文)。同じ英文は重複せず、足りない項目だけが足されます。</p>
+      <div class="row wrap">
+        <input id="fileData" type="file" accept=".json,.csv,.txt">
+        <button id="btnExport">バックアップ保存</button>
+        <button id="btnClear" class="danger">英文をすべて削除</button>
+      </div>
+    </div>
   </section>
 </main>
 
+<button id="selPlay" class="pri" hidden>▶ 聞く</button>
 <div id="toast" role="status" aria-live="polite"></div>
 <script src="vendor/qrcode.js"></script>
 <script src="js/md.js"></script>
+<script src="js/clean.js"></script>
+<script src="js/practice.js"></script>
 <script src="js/store.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/app.js"></script>

@@ -8,11 +8,11 @@ const Sync = (() => {
   const CHECK = "eng-note-check";
   const te = new TextEncoder(), td = new TextDecoder();
 
-  // 取り込む側(o)の空の項目を、手元(loc)の値で埋める
+  // 取り込む側(o)の空の項目を、手元(loc)の値で埋める(英文は、解析など足りない項目だけを足す Clean.fill)
   const fillEmpty = (o, loc) => { for (const k of Object.keys(loc)) if (o[k] == null || o[k] === "" || (Array.isArray(o[k]) && !o[k].length)) o[k] = loc[k] };
   // 行の種類 → 保存先の表、同じものかを見分けるキー
   const KIND = {
-    sentence: { store: "sentences", nat: x => x.text.toLowerCase().replace(/\s+/g, " ").trim() },
+    sentence: { store: "sentences", nat: x => x.text.toLowerCase(), fill: (a, b) => Clean.fill(a, b) },
     note: { store: "notes", nat: x => x.id }
   };
   let st = null;                 // { token, key(CryptoKey), since, hashes, last }
@@ -70,7 +70,7 @@ const Sync = (() => {
     if (idx >= 0) arr[idx] = o;
     else {
       const di = arr.findIndex(x => !st.hashes[rk(rec.kind, x.id)] && kd.nat(x) === kd.nat(o));
-      if (di >= 0) { const loc = arr[di]; arr.splice(di, 1); await Store.del([loc.id], kd.store); fillEmpty(o, loc) }
+      if (di >= 0) { const loc = arr[di]; arr.splice(di, 1); await Store.del([loc.id], kd.store); (kd.fill || fillEmpty)(o, loc) }
       arr.push(o);
     }
     await Store.put(o, kd.store); st.hashes[kk] = h; return true;
