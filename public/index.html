@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>英語ノート</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>英語ノート</h1>
+  <nav id="tabs" role="tablist">
+    <button role="tab" data-tab="sent" aria-selected="true">英文</button>
+    <button role="tab" data-tab="note" aria-selected="false">解説</button>
+    <button role="tab" data-tab="sync" aria-selected="false">同期</button>
+  </nav>
+  <span class="topr"><button type="button" id="syncStatus" class="sub" hidden title="クリックで同期の画面を開く"></button></span>
+</header>
+
+<main>
+  <!-- 英文 -->
+  <section id="tab-sent" class="tab">
+    <div class="card">
+      <div class="row wrap">
+        <input id="fq" type="search" placeholder="英文・和訳で検索" aria-label="検索">
+        <select id="fgroup" aria-label="グループ"></select>
+        <select id="fstatus" aria-label="状態">
+          <option value="">状態: すべて</option><option value="new">未学習</option><option value="learning">学習中</option><option value="mastered">覚えた</option>
+        </select>
+        <button id="btnShuffle" class="sm" aria-pressed="false" title="ランダムな順に並べ替えます(押すたびに並べ直します)">シャッフル</button>
+        <button id="btnAddSent" class="sm" aria-expanded="false" aria-controls="addSent">＋ 英文</button>
+      </div>
+      <div id="addSent" class="addform" hidden>
+        <textarea id="addText" rows="3" placeholder="英文(1行に1文。複数行を貼ると、まとめて追加します)"></textarea>
+        <input id="addJa" type="text" placeholder="和訳(任意。1文だけのとき)" maxlength="500">
+        <input id="addGroup" type="text" placeholder="グループ名(任意。「、」で複数)" maxlength="80">
+        <div class="row"><button id="addOk" class="pri">追加</button><button id="addCancel">閉じる</button></div>
+        <p class="sub">ファイルから入れるとき: .csv(1列目=英文、2列目=和訳、3列目=グループ名)/ .txt(1行=1文)</p>
+        <input id="file" type="file" accept=".csv,.txt">
+      </div>
+      <div class="row wrap tools">
+        <label class="inl">間 <select id="pGap" title="読んだあとに置く、まねする時間(読み上げの長さの何倍か)"><option value="0">なし</option><option value="0.8">0.8倍</option><option value="1" selected>1倍</option><option value="1.5">1.5倍</option><option value="2">2倍</option></select></label>
+        <label class="inl">繰り返し <select id="pRep"></select></label>
+        <label class="inl">速さ <select id="pRate"><option value="0.6">0.6</option><option value="0.8">0.8</option><option value="1" selected>1.0</option><option value="1.2">1.2</option></select></label>
+        <button id="btnPlayAll" class="sm">▶ 表示中を順に聞く</button>
+        <button id="btnStop" class="sm" hidden>■ 止める</button>
+        <button id="btnJaToggle" class="sm" aria-pressed="true" title="和訳の表示を切り替えます">和訳</button>
+        <button id="btnTxt" class="sm" title="表示中の英文を、.txt(1行=1文)で保存します">.txt保存</button>
+        <button id="btnExport" class="sm" title="英文と解説を、.json に保存します">バックアップ</button>
+        <input id="fileJson" type="file" accept=".json" hidden>
+        <button id="btnImport" class="sm" title="バックアップ(.json)を読み込みます">読み込み</button>
+      </div>
+      <p id="info" class="sub"></p>
+    </div>
+    <div id="list" class="list"></div>
+  </section>
+
+  <!-- 解説 -->
+  <section id="tab-note" class="tab" hidden>
+    <div class="card">
+      <div class="row wrap">
+        <input id="nq" type="search" placeholder="解説を検索" aria-label="解説を検索">
+        <button id="btnAddNote" class="sm pri">＋ 解説を追加</button>
+        <input id="fileMd" type="file" accept=".md,.markdown,.txt" hidden>
+        <button id="btnMdFile" class="sm" title="Markdown ファイル(.md)を、解説として追加します">.md を読み込む</button>
+      </div>
+      <p id="nInfo" class="sub"></p>
+    </div>
+    <div id="noteList" class="list"></div>
+
+    <!-- 追加・編集 -->
+    <dialog id="noteDlg">
+      <h2 id="noteDlgTitle">解説を追加</h2>
+      <input id="nTitle" type="text" placeholder="タイトル" maxlength="120">
+      <div class="mdedit">
+        <textarea id="nBody" rows="14" placeholder="Markdown で書く、または貼り付ける。&#10;&#10;# 見出し&#10;- 箇条書き&#10;**太字** `code`"></textarea>
+        <div id="nPrev" class="md prev" aria-label="プレビュー"></div>
+      </div>
+      <div class="row wrap">
+        <label class="inl">グループ <input id="nGroup" type="text" placeholder="任意" maxlength="40"></label>
+        <span class="grow"></span>
+        <button id="nDel" class="danger" hidden>削除</button>
+        <button id="nCancel">やめる</button>
+        <button id="nOk" class="pri">保存</button>
+      </div>
+    </dialog>
+  </section>
+
+  <!-- 同期 -->
+  <section id="tab-sync" class="tab" hidden>
+    <div class="card">
+      <h2>クラウド同期(暗号化)</h2>
+      <div id="syncBox"></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="vendor/qrcode.js"></script>
+<script src="js/md.js"></script>
+<script src="js/store.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
