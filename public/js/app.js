@@ -83,7 +83,7 @@
     try { localStorage.setItem("tab", t) } catch {}
     selBtnUpdate();
   }
-  $("#tabs").onclick = e => { const b = e.target.closest("button[data-tab]"); if (b) setTab(b.dataset.tab) };
+  $("#tabs").onclick = e => { const b = e.target.closest("button[data-tab]"); if (b) { if (b.dataset.tab === "note") onlyNote = null; setTab(b.dataset.tab) } };
   $("#syncStatus").onclick = () => setTab("sync");
 
   // ---------- 選択(英文タブ) ----------
@@ -237,7 +237,7 @@
     const b = e.target.closest("button[data-note]"); if (!b) return; e.preventDefault();
     const r = rows.find(x => x.id === b.dataset.note); if (!r) return;
     const n = noteMap.get(noteKey(r.text)); stopAudio();
-    if (n) { setTab("note"); $("#nq").value = ""; openNotes.add(n.id); renderNotes(); const el = document.querySelector(`.note-i[data-id="${n.id}"]`); if (el) { el.scrollIntoView({ block: "start" }); el.classList.add("hit") } return }
+    if (n) { $("#nq").value = ""; onlyNote = n.id; setTab("note"); window.scrollTo({ top: 0 }); return }
     setTab("note"); openNote(null);
     $("#nTitle").value = r.text.slice(0, 120); $("#nBody").value = `# ${r.text}
 
@@ -345,18 +345,22 @@
 
   // ---------- 解説(Markdown) ----------
   const groupsOf = n => n.groups || [];
-  let editNote = null; const openNotes = new Set();
+  let editNote = null, onlyNote = null; const openNotes = new Set();
   const sortedNotes = () => notes.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0));
   function renderNotes() {
     const q = $("#nq").value.trim().toLowerCase();
-    const a = sortedNotes().filter(n => !q || n.text.toLowerCase().includes(q) || (n.body || "").toLowerCase().includes(q));
-    $("#nInfo").textContent = `${a.length} / ${notes.length} 件`;
+    const one = onlyNote && notes.find(n => n.id === onlyNote);
+    if (onlyNote && !one) onlyNote = null;
+    const a = one ? [one] : sortedNotes().filter(n => !q || n.text.toLowerCase().includes(q) || (n.body || "").toLowerCase().includes(q));
+    $("#nInfo").innerHTML = one ? `この英文の解説を表示しています。 <button type="button" class="sm" id="nAll">すべての解説を見る</button>` : `${a.length} / ${notes.length} 件`;
+    if (one) openNotes.add(one.id);
     $("#noteList").innerHTML = a.length ? a.map(n => `<div class="note-i" data-id="${n.id}">
       <div class="nt" data-a="toggle"><b>${esc(n.text)}</b>${groupsOf(n).map(g => `<span class="tag">${esc(g)}</span>`).join("")}<button class="sm" data-a="edit">編集</button></div>
       ${openNotes.has(n.id) ? `<div class="body md">${Md.render(n.body)}</div>` : ""}</div>`).join("")
       : '<div class="card sub">解説がありません。「＋ 解説を追加」から、Markdown を貼り付けて追加します。</div>';
   }
-  $("#nq").addEventListener("input", renderNotes);
+  $("#nq").addEventListener("input", () => { onlyNote = null; renderNotes() });
+  $("#nInfo").addEventListener("click", e => { if (e.target.closest("#nAll")) { onlyNote = null; renderNotes() } });
   $("#noteList").addEventListener("click", e => {
     const item = e.target.closest(".note-i"); if (!item || e.target.closest(".body")) return;
     const id = item.dataset.id;
