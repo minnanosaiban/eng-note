@@ -383,3 +383,5 @@ dialog.notedlg input[type=text]{width:100%;margin-bottom:8px}
 .err{color:var(--danger);font-size:13px}
 #selPlay{position:fixed;z-index:30}
 .note-i.hit{outline:2px solid var(--pri)}
+/* 解説の英文(タイトル行と、本文の先頭の見出し)は、太字にしない */
+.note-i .nt b,.md h1{font-weight:400}
